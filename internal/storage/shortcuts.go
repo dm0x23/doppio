@@ -2,6 +2,7 @@ package storage
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"time"
@@ -31,16 +32,34 @@ func Load() ([]Shortcut, error) {
 	}
 	jsonContent, err := os.ReadFile(path)
 	if err != nil {
-		os.IsNotExist(err){
+		if os.IsNotExist(err) {
 			return []Shortcut{}, nil
 		}
 		return nil, err
 	}
 	var shortcuts []Shortcut
-	json.Unmarshal(jsonContent, &shortcuts); err != nil{
+	if json.Unmarshal(jsonContent, &shortcuts); err != nil {
 		return nil, fmt.Errorf("failed to parse shortcuts.json %w", err)
 	}
 
 	return shortcuts, nil
 
+}
+
+func Save(shortcuts []Shortcut) error {
+	path, err := configPath()
+	if err != nil {
+		return err
+	}
+
+	if err := os.MkdirAll(filepath.Dir(path), 0o775); err != nil {
+		return err
+	}
+
+	data, err := json.MarshalIndent(shortcuts, "", "  ")
+	if err != nil {
+		return err
+	}
+
+	return os.WriteFile(path, data, 0644)
 }
