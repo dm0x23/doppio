@@ -63,3 +63,54 @@ func Save(shortcuts []Shortcut) error {
 
 	return os.WriteFile(path, data, 0644)
 }
+
+func List() ([]Shortcut, error) {
+	return Load()
+}
+
+func Add(name, command string, shells []string) error {
+	shortcuts, err := Load()
+	if err != nil {
+		return err
+	}
+
+	for _, short := range shortcuts {
+		if short.Name == name {
+			return fmt.Errorf("Shortcut already exists")
+		}
+	}
+
+	shortcut := Shortcut{
+		Name:        name,
+		Command:     command,
+		Description: "",
+		Shells:      shells,
+		Created:     time.Now(),
+	}
+	shortcuts = append(shortcuts, shortcut)
+	return nil
+}
+
+func Remove(name string) error {
+	shortcuts, err := Load()
+	if err != nil {
+		return err
+	}
+
+	newSlice := make([]Shortcut, 0, len(shortcuts))
+	found := false
+
+	for _, shortcut := range shortcuts {
+		if shortcut.Name != name {
+			newSlice = append(newSlice, shortcut)
+		} else {
+			found = true
+		}
+	}
+
+	if !found {
+		return fmt.Errorf("Shortcut not found")
+	}
+
+	return Save(newSlice)
+}
