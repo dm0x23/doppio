@@ -22,7 +22,8 @@ func configPath() (string, error) {
 		return "", err
 	}
 
-	return filepath.Join(configDir, "doppio", "shortcuts.json"), nil
+	fullpath := filepath.Join(configDir, "doppio", "shortcuts.json")
+	return fullpath, nil
 }
 
 func Load() ([]Shortcut, error) {
@@ -43,7 +44,6 @@ func Load() ([]Shortcut, error) {
 	}
 
 	return shortcuts, nil
-
 }
 
 func Save(shortcuts []Shortcut) error {
@@ -61,7 +61,7 @@ func Save(shortcuts []Shortcut) error {
 		return err
 	}
 
-	return os.WriteFile(path, data, 0644)
+	return os.WriteFile(path, data, 0o644)
 }
 
 func List() ([]Shortcut, error) {
@@ -88,7 +88,7 @@ func Add(name, command string, shells []string) error {
 		Created:     time.Now(),
 	}
 	shortcuts = append(shortcuts, shortcut)
-	return nil
+	return Save(shortcuts)
 }
 
 func Remove(name string) error {
