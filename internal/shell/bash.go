@@ -1,6 +1,7 @@
 package shell
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 )
@@ -8,7 +9,7 @@ import (
 type BashAdapter struct{}
 
 func (b BashAdapter) GenerateAlias(name, command string) string {
-	return `alias ` + name + `='` + command + `'`
+	return fmt.Sprintf("alias %s='%s'", name, command)
 }
 
 func (b BashAdapter) RCFilePath() string {
