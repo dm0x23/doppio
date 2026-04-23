@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/dm0x23/doppio/internal/storage"
+	"github.com/dm0x23/doppio/internal/sync"
 	"github.com/spf13/cobra"
 )
 
@@ -27,6 +28,10 @@ func runRemove(cmd *cobra.Command, args []string) error {
 	}
 
 	fmt.Printf("Shortcut %s removed\n", name)
+	if err := sync.Run(); err != nil {
+		return fmt.Errorf("shortcut removed but sync failed: %w", err)
+	}
 
+	fmt.Println("Synced to shell config ✓")
 	return nil
 }

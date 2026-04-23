@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/dm0x23/doppio/internal/storage"
+	"github.com/dm0x23/doppio/internal/sync"
 	"github.com/spf13/cobra"
 )
 
@@ -19,7 +20,6 @@ var addCmd = &cobra.Command{
 }
 
 func init() {
-
 	addCmd.Flags().StringSliceVarP(&shells, "shells", "s", []string{"zsh", "bash"}, "Target shells (comma-separated)")
 	rootCmd.AddCommand(addCmd)
 }
@@ -33,6 +33,10 @@ func runAdd(cmd *cobra.Command, args []string) error {
 	}
 
 	fmt.Printf("Shortcut %s add\n", name)
+	if err := sync.Run(); err != nil {
+		return fmt.Errorf("shortcut added but sync failed: %w", err)
+	}
 
+	fmt.Println("Synced to shell config ✓")
 	return nil
 }
