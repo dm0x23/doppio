@@ -8,7 +8,7 @@ import (
 type BashAdapter struct{}
 
 func (b BashAdapter) GenerateAlias(name, command string) string {
-	return `alias` + name + `="` + command + `"`
+	return `alias ` + name + `='` + command + `'`
 }
 
 func (b BashAdapter) RCFilePath() string {
