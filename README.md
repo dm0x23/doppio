@@ -4,6 +4,11 @@
 
 `dop` is a shortcut manager for your terminal. Create aliases, watch directories for new projects, and bootstrap your development environment — all from the command line.
 
+--- 
+## Demo
+
+https://github.com/user-attachments/assets/1d0a1159-3a1b-47f7-b119-76121963d7de
+
 ---
 
 ## Features
