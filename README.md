@@ -22,6 +22,8 @@
 ## How it works
 <img width="2337" height="748" alt="dop v0 pic" src="https://github.com/user-attachments/assets/67baabde-1428-47ee-a861-342de6dfeb4b" />
 
+> Updated architecture coming soon
+
 1. You type `dop add <name> <command>`
 2. Doppio stores it in ~/.config/doppio/shortcuts.json
 3. The sync engine writes the alias to a managed block in your shell config
