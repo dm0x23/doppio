@@ -93,8 +93,9 @@ dop remove proj
 
 ## Roadmap
 - [x] Manual shortcut management
-- [ ] Watch mode
-- [ ] Bootstrap: The one command development setup
+- [x] Watch mode
+- [x] Bootstrap: The one command development setup
+- [ ] Make watch into something that runs in the background
 - [ ] TUI with BubbleTea
 - [ ] Support for fish, powershell etc.
 
