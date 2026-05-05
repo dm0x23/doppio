@@ -30,7 +30,6 @@ func (m Model) View() tea.View {
 		body = "Unknown screen"
 	}
 
-	// Center modals
 	if m.currentScreen() != "list" {
 		body = lipgloss.Place(m.width, m.height-2,
 			lipgloss.Center, lipgloss.Center,
@@ -38,8 +37,7 @@ func (m Model) View() tea.View {
 		)
 	}
 
-	// Footer with help and status
-	help := "(a)dd (d)elete (w)atch (b)ootstrap (s)ync (q)uit"
+	help := "(a)dd (d)elete (w)atch (b)ootstrap (s)ync"
 	status := ""
 	if m.statusMsg != "" {
 		status = lipgloss.NewStyle().Foreground(green).Render(m.statusMsg)

@@ -6,8 +6,8 @@ var (
 	base      = lipgloss.Color("7")
 	surface   = lipgloss.Color("0") // black
 	subtle    = lipgloss.Color("8") // bright black (dark grey)
-	highlight = lipgloss.Color("6")
-	accent    = lipgloss.Color("12")
+	highlight = lipgloss.Color("12")
+	accent    = lipgloss.Color("1")
 	green     = lipgloss.Color("2")
 
 	HeaderStyle = lipgloss.NewStyle().
