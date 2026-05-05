@@ -39,6 +39,7 @@ After=network.target
 [Service]
 Type=simple
 ExecStart=%s/go/bin/dop watch
+Environment=DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/%U/bus
 Restart=on-failure
 RestartSec=10
 
