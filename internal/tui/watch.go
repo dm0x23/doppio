@@ -1,6 +1,10 @@
 package tui
 
 import (
+	"fmt"
+	"os"
+	"os/exec"
+
 	"charm.land/bubbles/v2/textinput"
 	tea "charm.land/bubbletea/v2"
 	"github.com/dm0x23/doppio/internal/watch"
@@ -50,8 +54,11 @@ func (wm *WatchModel) Update(msg tea.Msg) tea.Cmd {
 						}
 					}
 					wm.dirs = append(wm.dirs, newDir)
-					watch.SaveDirs(wm.dirs)
+					if err := watch.SaveDirs(wm.dirs); err != nil {
+						fmt.Fprintf(os.Stderr, "ERROR saving watch dirs: %v\n", err)
+					}
 				}
+				restartWatchDaemon()
 				wm.adding = false
 				wm.input.SetValue("")
 				return nil
@@ -92,8 +99,11 @@ func (wm *WatchModel) Update(msg tea.Msg) tea.Cmd {
 			if wm.cursor >= len(wm.dirs) && len(wm.dirs) > 0 {
 				wm.cursor = len(wm.dirs) - 1
 			}
-			watch.SaveDirs(wm.dirs)
+			if err := watch.SaveDirs(wm.dirs); err != nil {
+				fmt.Fprintf(os.Stderr, "ERROR saving watch dirs: %v\n", err)
+			}
 		}
+		restartWatchDaemon()
 	}
 	return nil
 }
@@ -118,4 +128,11 @@ func (wm WatchModel) View() string {
 	}
 	s += "\n(a)dd  (d)elete  Esc · Back"
 	return s
+}
+
+func restartWatchDaemon() error {
+	if err := exec.Command("systemctl", "--user", "is-active", "--quiet", "doppio-watch").Run(); err != nil {
+		return exec.Command("systemctl", "--user", "start", "doppio-watch").Run()
+	}
+	return exec.Command("systemctl", "--user", "restart", "doppio-watch").Run()
 }

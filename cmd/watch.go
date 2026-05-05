@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"os/signal"
 	"syscall"
 
@@ -25,7 +26,7 @@ prompts you to create aliases for them automatically
 Use --auto to skip prompts and create aliases for them automatically,
 Use --include-existing to alias folders already in directory
 	`,
-	Args: cobra.ExactArgs(1),
+	Args: cobra.MaximumNArgs(1),
 	RunE: runWatch,
 }
 
@@ -38,8 +39,6 @@ func init() {
 }
 
 func runWatch(cmd *cobra.Command, args []string) error {
-	var dirsToWatch []string
-
 	if len(args) > 0 {
 		newDir := args[0]
 		info, err := os.Stat(newDir)
@@ -55,32 +54,35 @@ func runWatch(cmd *cobra.Command, args []string) error {
 			return fmt.Errorf("failed to read watch config: %w", err)
 		}
 
-		alreadyWatched := false
 		for _, d := range existingDirs {
 			if d == newDir {
-				alreadyWatched = true
-				break
+				fmt.Println("Directory already watched.")
+				return nil
 			}
-		}
-		if !alreadyWatched {
-			existingDirs = append(existingDirs, newDir)
-			if err := watch.SaveDirs(existingDirs); err != nil {
-				return fmt.Errorf("failed to save watch config: %w", err)
-			}
-			fmt.Printf("Added %s to watched directories\n", newDir)
 		}
 
-		dirsToWatch = existingDirs
-	} else {
-		var err error
-		dirsToWatch, err = watch.LoadDirs()
-		if err != nil {
-			return fmt.Errorf("failed to load watch config: %w", err)
+		existingDirs = append(existingDirs, newDir)
+		if err := watch.SaveDirs(existingDirs); err != nil {
+			return fmt.Errorf("failed to save watch config: %w", err)
 		}
-		if len(dirsToWatch) == 0 {
-			fmt.Println("No watched directories. Add one with: dop watch <path>")
-			return nil
+
+		fmt.Printf("Added %s to watched directories\n", newDir)
+
+		if err := restartWatchDaemon(); err != nil {
+			fmt.Println("Could not restart daemon; start it manually with: systemctl --user restart doppio-watch")
+		} else {
+			fmt.Println("Daemon restarted – now watching the new directory")
 		}
+		return nil
+	}
+
+	dirs, err := watch.LoadDirs()
+	if err != nil {
+		return fmt.Errorf("failed to load watch config: %w", err)
+	}
+	if len(dirs) == 0 {
+		fmt.Println("No watched directories. Add one with: dop watch <path>")
+		return nil
 	}
 
 	watcher, err := fsnotify.NewWatcher()
@@ -89,7 +91,7 @@ func runWatch(cmd *cobra.Command, args []string) error {
 	}
 	defer watcher.Close()
 
-	for _, dir := range dirsToWatch {
+	for _, dir := range dirs {
 		if err := watcher.Add(dir); err != nil {
 			fmt.Printf("Could not watch %s: %v\n", dir, err)
 		} else {
@@ -99,7 +101,6 @@ func runWatch(cmd *cobra.Command, args []string) error {
 
 	signalChan := make(chan os.Signal, 1)
 	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM)
-
 	fmt.Println("Press Ctrl+C to stop all watchers.")
 
 	for {
@@ -108,13 +109,18 @@ func runWatch(cmd *cobra.Command, args []string) error {
 			if event.Op&fsnotify.Create != 0 {
 				watch.HandleNewItem(event.Name, shells, auto)
 			}
-
 		case err := <-watcher.Errors:
 			fmt.Printf("Watch error: %v\n", err)
-
 		case <-signalChan:
 			fmt.Println("\nWatch stopped.")
 			return nil
 		}
 	}
+}
+
+func restartWatchDaemon() error {
+	if err := exec.Command("systemctl", "--user", "is-active", "--quiet", "doppio-watch").Run(); err != nil {
+		return exec.Command("systemctl", "--user", "start", "doppio-watch").Run()
+	}
+	return exec.Command("systemctl", "--user", "restart", "doppio-watch").Run()
 }
