@@ -5,30 +5,41 @@ import (
 	"github.com/dm0x23/doppio/internal/storage"
 )
 
+type displayShortcut struct {
+	Shortcut storage.Shortcut
+	Selected bool
+}
+
 type Model struct {
 	screenStack []string
 	cursor      int
-	shortcuts   []storage.Shortcut
+	shortcuts   []displayShortcut
 	width       int
 	height      int
 
-	addForm        AddFormModel
-	deleteConfirm  DeleteConfirmModel
-	watchModel     WatchModel
-	bootstrapModel BootstrapModel
+	addForm           AddFormModel
+	deleteConfirm     DeleteConfirmModel
+	watchModel        WatchModel
+	bootstrapModel    BootstrapModel
+	bulkDeleteConfirm BulkDeleteConfirmModel
 
 	statusMsg string
 }
 
 func NewModel() Model {
-	shortcuts, _ := storage.Load()
+	raw, _ := storage.Load()
+	shortcuts := make([]displayShortcut, len(raw))
+	for i, s := range raw {
+		shortcuts[i] = displayShortcut{Shortcut: s}
+	}
 	return Model{
-		screenStack:    []string{"list"},
-		shortcuts:      shortcuts,
-		addForm:        NewAddFormModel(),
-		deleteConfirm:  DeleteConfirmModel{},
-		watchModel:     NewWatchModel(),
-		bootstrapModel: NewBootstrapModel(),
+		screenStack:       []string{"list"},
+		shortcuts:         shortcuts,
+		addForm:           NewAddFormModel(),
+		deleteConfirm:     DeleteConfirmModel{},
+		watchModel:        NewWatchModel(),
+		bootstrapModel:    NewBootstrapModel(),
+		bulkDeleteConfirm: BulkDeleteConfirmModel{},
 	}
 }
 

@@ -26,6 +26,8 @@ func (m Model) View() tea.View {
 		body = m.watchModel.View()
 	case "bootstrap":
 		body = m.bootstrapModel.View()
+	case "bulk-delete-confirm":
+		body = m.bulkDeleteConfirm.View()
 	default:
 		body = "Unknown screen"
 	}
@@ -61,13 +63,18 @@ func (m Model) renderTable() string {
 	header := TableHeaderStyle.Render("  Shortcut") + "  " + TableHeaderStyle.Render("Command")
 	rows := []string{header}
 	for i, sc := range m.shortcuts {
-		cursor := "  "
-		if m.cursor == i {
-			cursor = CursorMarker.Render(">") + " "
+		marker := " "
+		if sc.Selected {
+			marker = "✓"
 		}
+		cursor := marker + " "
+		if m.cursor == i {
+			cursor = CursorMarker.Render(">") + marker + " "
+		}
+
 		row := lipgloss.JoinHorizontal(lipgloss.Top,
-			TableRowStyle.Render(fmt.Sprintf("%s %s", cursor, sc.Name)),
-			TableRowStyle.Render(sc.Command),
+			TableRowStyle.Render(fmt.Sprintf("%s %s", cursor, sc.Shortcut.Name)),
+			TableRowStyle.Render(sc.Shortcut.Command),
 		)
 		if m.cursor == i {
 			row = TableSelectedStyle.Render(row)

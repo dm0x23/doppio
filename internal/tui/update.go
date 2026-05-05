@@ -32,7 +32,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case newShortcutMsg:
 		storage.Add(msg.name, msg.command, []string{"zsh", "bash"})
 		sync.Run()
-		m.shortcuts, _ = storage.List()
+		raw, _ := storage.List()
+		m.shortcuts = make([]displayShortcut, len(raw))
+		for i, s := range raw {
+			m.shortcuts[i] = displayShortcut{Shortcut: s}
+		}
 		m.popScreen()
 		m.statusMsg = "Added " + msg.name
 		return m, nil
@@ -43,7 +47,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case shortcutDeletedMsg:
 		sync.Run()
-		m.shortcuts, _ = storage.List()
+		raw, _ := storage.List()
+		m.shortcuts = make([]displayShortcut, len(raw))
+		for i, s := range raw {
+			m.shortcuts[i] = displayShortcut{Shortcut: s}
+		}
 		m.popScreen()
 		m.statusMsg = "Shortcut deleted"
 		return m, nil
@@ -63,6 +71,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, cmd
 	case "bootstrap":
 		cmd := m.bootstrapModel.Update(msg)
+		return m, cmd
+	case "bulk-delete-confirm":
+		cmd := m.bulkDeleteConfirm.Update(msg)
 		return m, cmd
 	}
 	return m, nil
@@ -90,8 +101,22 @@ func (m Model) handleListKeys(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if len(m.shortcuts) == 0 {
 			return m, nil
 		}
+
+		var selectedNames []string
+		for _, sc := range m.shortcuts {
+			if sc.Selected {
+				selectedNames = append(selectedNames, sc.Shortcut.Name)
+			}
+		}
+
+		if len(selectedNames) > 0 {
+			m.pushScreen("bulk-delete-confirm")
+			m.bulkDeleteConfirm = NewBulkDeleteConfirmModel(selectedNames)
+			return m, nil
+		}
+
 		m.pushScreen("delete-confirm")
-		m.deleteConfirm = NewDeleteConfirmModel(m.shortcuts[m.cursor].Name)
+		m.deleteConfirm = NewDeleteConfirmModel(m.shortcuts[m.cursor].Shortcut.Name)
 		return m, nil
 	case "w":
 		m.pushScreen("watch")
@@ -101,9 +126,19 @@ func (m Model) handleListKeys(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 	case "s":
 		sync.Run()
-		m.shortcuts, _ = storage.List()
+		raw, _ := storage.List()
+		m.shortcuts = make([]displayShortcut, len(raw))
+		for i, s := range raw {
+			m.shortcuts[i] = displayShortcut{Shortcut: s}
+		}
 		m.statusMsg = "Synced"
 		return m, nil
+	case " ", "space":
+		if len(m.shortcuts) > 0 {
+			m.shortcuts[m.cursor].Selected = !m.shortcuts[m.cursor].Selected
+		}
+		return m, nil
 	}
+
 	return m, nil
 }
