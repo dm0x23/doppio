@@ -3,6 +3,7 @@ package watch
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"os/signal"
 	"path/filepath"
 	"syscall"
@@ -61,35 +62,34 @@ func HandleNewItem(path string, shells []string, auto bool) {
 
 	folderName := filepath.Base(path)
 	suggestedName := SanitizeName(folderName)
-	var aliasName string
 
 	if auto {
-		aliasName = suggestedName
-	} else {
-		name, skip := promptForAlias(folderName, suggestedName)
-		if skip {
+		absPath, _ := filepath.Abs(path)
+		command := "cd " + absPath
+		if err := storage.Add(suggestedName, command, shells); err != nil {
+			fmt.Printf("Failed to add alias: %v\n", err)
 			return
 		}
-		aliasName = name
+		if err := sync.Run(); err != nil {
+			fmt.Printf("Alias added but sync failed: %v\n", err)
+			return
+		}
+		fmt.Printf("Alias '%s' → %s\n", suggestedName, absPath)
+		return
 	}
 
-	absPath, err := filepath.Abs(path)
+	notifySend(
+		"Doppio Watch",
+		fmt.Sprintf("New folder: %s\nSuggested alias: %s\nRun in terminal: dop add %s \"cd %s\"",
+			folderName, suggestedName, suggestedName, path),
+	)
+
+	exePath, err := os.Executable()
 	if err != nil {
-		fmt.Printf("Failed to resolve path: %v\n", err)
-		return
+		exePath = "dop"
 	}
 
-	command := "cd " + absPath
-	if err := storage.Add(aliasName, command, shells); err != nil {
-		fmt.Printf("Failed to add alias: %v\n", err)
-		return
-	}
-
-	if err := sync.Run(); err != nil {
-		fmt.Printf("failed to sync: %v\n", err)
-	}
-
-	fmt.Printf("Alias '%s' -> %s added\n", aliasName, absPath)
+	promptAlias(folderName, suggestedName, path, exePath)
 }
 
 func aliasExisting(dir string, shells []string) {
@@ -113,6 +113,58 @@ func aliasExisting(dir string, shells []string) {
 		}
 	}
 	sync.Run()
+}
+
+func notifySend(title, message string) {
+	cmd := exec.Command("notify-send", title, message, "--icon=terminal")
+	cmd.Run()
+}
+
+func promptAlias(folderName, suggestedName, fullPath string, dopPath string) {
+	script := fmt.Sprintf(
+		`echo "New folder: %s"
+echo "Suggested alias: %s"
+read -p "Enter alias name (or Enter for '%s', or 'cancel' to skip): " alias
+if [ -z "$alias" ]; then
+    alias="%s"
+fi
+if [ "$alias" != "cancel" ]; then
+   	%s add "$alias" "cd %s"
+    echo "Alias added. Press Enter to close."
+    read
+fi`,
+		folderName,
+		suggestedName,
+		suggestedName,
+		suggestedName,
+		dopPath,
+		fullPath,
+	)
+
+	if _, err := exec.LookPath("x-terminal-emulator"); err == nil {
+		cmd := exec.Command("x-terminal-emulator", "-e", "bash", "-c", script)
+		cmd.Start()
+		return
+	}
+
+	terminals := []struct {
+		name string
+		args []string
+	}{
+		{"kitty", []string{"-e", "bash", "-c", script}},
+		{"alacritty", []string{"-e", "bash", "-c", script}},
+		{"gnome-terminal", []string{"--", "bash", "-c", script}},
+		{"konsole", []string{"-e", "bash", "-c", script}},
+		{"xterm", []string{"-e", "bash", "-c", script}},
+	}
+
+	for _, term := range terminals {
+		if _, err := exec.LookPath(term.name); err == nil {
+			cmd := exec.Command(term.name, term.args...)
+			cmd.Start()
+			return
+		}
+	}
 }
 
 func handleRemovedItem(path string) {

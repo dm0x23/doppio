@@ -38,7 +38,7 @@ After=network.target
 
 [Service]
 Type=simple
-ExecStart=%s/go/bin/dop watch --auto
+ExecStart=%s/go/bin/dop watch
 Restart=on-failure
 RestartSec=10
 
