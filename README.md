@@ -31,14 +31,13 @@ https://github.com/user-attachments/assets/d27b75e7-d6b0-4651-a0b0-989bb4c0084c
 ---
 
 ## How it works
-<img width="2337" height="748" alt="dop v0 pic" src="https://github.com/user-attachments/assets/67baabde-1428-47ee-a861-342de6dfeb4b" />
-
-> Updated architecture coming soon
+<img width="2084" height="1922" alt="doppio" src="https://github.com/user-attachments/assets/c0b0ad8d-58ff-43c2-a3e9-1cd849fa5889" />
 
 1. You type `dop add <name> <command>`
 2. Doppio stores it in ~/.config/doppio/shortcuts.json
 3. The sync engine writes the alias to a managed block in your shell config
 4. You type the shortcut name and it just works
+5. Or speed it up further by setting up a watched directory with `dop watch <path>` and every new folder there is made alias automatically
 
 --- 
 ## Installation
