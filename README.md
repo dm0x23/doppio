@@ -7,7 +7,11 @@
 --- 
 ## Demo
 
-https://github.com/user-attachments/assets/1d0a1159-3a1b-47f7-b119-76121963d7de
+<img width="1200" height="600" alt="doppio-demo" src="https://github.com/user-attachments/assets/5731c7de-0073-41a8-a5a3-d3628eeb0539" />
+> Demo for the CLI version of doppio
+
+https://github.com/user-attachments/assets/d27b75e7-d6b0-4651-a0b0-989bb4c0084c
+> Demo for the TUI version of doppio
 
 ---
 
