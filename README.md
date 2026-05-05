@@ -15,13 +15,15 @@ https://github.com/user-attachments/assets/1d0a1159-3a1b-47f7-b119-76121963d7de
 
 - **Add shortcuts:** `dop add proj "cd ~/Desktop/projects"`
 - **List them:** `dop list`
-- **Remove them:** `dop remove proj`
+- **Remove them:** `dop remove proj docs gs`
 - **Auto-sync:** Shell config updated automatically after every change
 - **Watch mode:** Point at a directory and auto-alias new projects as they're created
 - **Bootstrap:** One command to install favorite CLI tools and configure sensible defaults
 - **Managed blocks:** Never touches your other aliases, everything lives between markers
-- **TUI:** Interactive terminal interface for managing shortcuts *(coming soon)*
-
+- **TUI:** Interactive terminal interface for managing shortcuts
+- **Background daemon:** dop watch runs as a systemd service, surviving reboots
+- **Interactive naming:** Desktop notification + terminal pop‑up to name new folders
+- **TUI with multi‑select:** Space to select, bulk delete, Watch & Bootstrap screens
 ---
 
 ## How it works
@@ -52,8 +54,11 @@ export PATH="$HOME/go/bin:$PATH"
 ```bash
 git clone https://github.com/dm0x23/doppio.git
 cd doppio
+make build
 make install
 ```
+
+> run `dop init` if you want to add it as a background-service for dop watch. Feel free to configure the path if you have moved the binary elsewhere: `systemctl --user edit --full doppio-watch`
 ---
 
 ## Quickstart
@@ -70,7 +75,7 @@ proj     # → jumps to ~/Desktop/projects
 # List all shortcuts
 dop list
 
-# Remove one
+# Remove one or more
 dop remove proj
 ```
 ---
@@ -96,19 +101,25 @@ dop remove proj
 | `dop bootstrap` | Install recommended CLI tools + configure aliases |
 | `dop completion <shell>` | Generate shell autocompletion script |
 | `dop --version` | Print version information |
+| `dop remove <name> [<name> ...]` | Remove one or more shortcuts (bulk) |
+| `dop tui`                         | Launch the interactive terminal UI |
+| `dop init`                        | Install the watch daemon as a user systemd service |
 ---
 
 ## Roadmap
 - [x] Manual shortcut management
 - [x] Watch mode
 - [x] Bootstrap: The one command development setup
-- [ ] Make watch into something that runs in the background
-- [ ] TUI with BubbleTea
+- [x] Make watch into something that runs in the background
+- [x] TUI with BubbleTea
 - [ ] Support for fish, powershell etc.
 
 ## Built with
 - Go
 - Cobra - CLI Framework
+- BubbleTea - Framework for TUI
+- LipGloss - A way to style the BubbleTea TUI
+- Bubbles - Components for BubbleTea
 - fsnotify - File system watcher
 
 ## Author
