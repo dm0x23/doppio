@@ -3,8 +3,11 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/dm0x23/doppio/internal/watch"
+	"github.com/fsnotify/fsnotify"
 	"github.com/spf13/cobra"
 )
 
@@ -35,16 +38,83 @@ func init() {
 }
 
 func runWatch(cmd *cobra.Command, args []string) error {
-	dir := args[0]
+	var dirsToWatch []string
 
-	info, err := os.Stat(dir)
+	if len(args) > 0 {
+		newDir := args[0]
+		info, err := os.Stat(newDir)
+		if err != nil {
+			return fmt.Errorf("cannot access directory: %w", err)
+		}
+		if !info.IsDir() {
+			return fmt.Errorf("not a directory: %s", newDir)
+		}
+
+		existingDirs, err := watch.LoadDirs()
+		if err != nil {
+			return fmt.Errorf("failed to read watch config: %w", err)
+		}
+
+		alreadyWatched := false
+		for _, d := range existingDirs {
+			if d == newDir {
+				alreadyWatched = true
+				break
+			}
+		}
+		if !alreadyWatched {
+			existingDirs = append(existingDirs, newDir)
+			if err := watch.SaveDirs(existingDirs); err != nil {
+				return fmt.Errorf("failed to save watch config: %w", err)
+			}
+			fmt.Printf("Added %s to watched directories\n", newDir)
+		}
+
+		dirsToWatch = existingDirs
+	} else {
+		var err error
+		dirsToWatch, err = watch.LoadDirs()
+		if err != nil {
+			return fmt.Errorf("failed to load watch config: %w", err)
+		}
+		if len(dirsToWatch) == 0 {
+			fmt.Println("No watched directories. Add one with: dop watch <path>")
+			return nil
+		}
+	}
+
+	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
-		return fmt.Errorf("cannot access directory %w", err)
+		return fmt.Errorf("failed to create watcher: %w", err)
+	}
+	defer watcher.Close()
+
+	for _, dir := range dirsToWatch {
+		if err := watcher.Add(dir); err != nil {
+			fmt.Printf("Could not watch %s: %v\n", dir, err)
+		} else {
+			fmt.Printf("Watching %s\n", dir)
+		}
 	}
 
-	if !info.IsDir() {
-		return fmt.Errorf("not a directory %w", err)
-	}
+	signalChan := make(chan os.Signal, 1)
+	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM)
 
-	return watch.Start(dir, shells, auto, includeExisting)
+	fmt.Println("Press Ctrl+C to stop all watchers.")
+
+	for {
+		select {
+		case event := <-watcher.Events:
+			if event.Op&fsnotify.Create != 0 {
+				watch.HandleNewItem(event.Name, shells, auto)
+			}
+
+		case err := <-watcher.Errors:
+			fmt.Printf("Watch error: %v\n", err)
+
+		case <-signalChan:
+			fmt.Println("\nWatch stopped.")
+			return nil
+		}
+	}
 }

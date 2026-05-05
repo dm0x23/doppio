@@ -3,13 +3,12 @@ package tui
 import "charm.land/lipgloss/v2"
 
 var (
-	// ANSI colour codes – adapt to terminal theme
-	base      = lipgloss.Color("7")  // white (foreground)
-	surface   = lipgloss.Color("0")  // black
-	subtle    = lipgloss.Color("8")  // bright black (dark grey)
-	highlight = lipgloss.Color("14") // bright cyan
-	accent    = lipgloss.Color("9")  // bright red
-	green     = lipgloss.Color("10") // bright green
+	base      = lipgloss.Color("7")
+	surface   = lipgloss.Color("0") // black
+	subtle    = lipgloss.Color("8") // bright black (dark grey)
+	highlight = lipgloss.Color("6")
+	accent    = lipgloss.Color("12")
+	green     = lipgloss.Color("2")
 
 	HeaderStyle = lipgloss.NewStyle().
 			Bold(true).
@@ -25,9 +24,8 @@ var (
 	TableRowStyle = lipgloss.NewStyle().
 			Padding(0, 1)
 
-	// Selection with a subtle dark overlay – not full opacity
 	TableSelectedStyle = lipgloss.NewStyle().
-				Background(subtle). // = ANSI 8 (dark grey)
+				Background(subtle).
 				Padding(0, 1).
 				Foreground(base)
 

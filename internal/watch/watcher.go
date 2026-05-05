@@ -37,7 +37,7 @@ func Start(dir string, shells []string, auto, includeExisting bool) error {
 		select {
 		case event := <-watcher.Events:
 			if event.Op&fsnotify.Create != 0 {
-				handleNewItem(event.Name, shells, auto)
+				HandleNewItem(event.Name, shells, auto)
 			}
 			if event.Op&fsnotify.Remove != 0 {
 				handleRemovedItem(event.Name)
@@ -53,7 +53,7 @@ func Start(dir string, shells []string, auto, includeExisting bool) error {
 	}
 }
 
-func handleNewItem(path string, shells []string, auto bool) {
+func HandleNewItem(path string, shells []string, auto bool) {
 	info, err := os.Stat(path)
 	if err != nil || !info.IsDir() {
 		return

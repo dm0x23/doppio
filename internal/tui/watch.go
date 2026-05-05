@@ -1,12 +1,9 @@
 package tui
 
 import (
-	"encoding/json"
-	"os"
-	"path/filepath"
-
 	"charm.land/bubbles/v2/textinput"
 	tea "charm.land/bubbletea/v2"
+	"github.com/dm0x23/doppio/internal/watch"
 )
 
 type WatchModel struct {
@@ -17,12 +14,10 @@ type WatchModel struct {
 }
 
 func NewWatchModel() WatchModel {
-	// Load saved watched dirs
-	dirs, _ := loadWatchedDirs()
+	dirs, _ := watch.LoadDirs()
 
 	input := textinput.New()
 	input.Placeholder = "Directory path"
-	input.Focus()
 
 	return WatchModel{
 		dirs:   dirs,
@@ -33,7 +28,6 @@ func NewWatchModel() WatchModel {
 }
 
 func (wm *WatchModel) Update(msg tea.Msg) tea.Cmd {
-	// If we're in add mode, pass to textinput
 	if wm.adding {
 		switch msg := msg.(type) {
 		case tea.KeyPressMsg:
@@ -43,10 +37,11 @@ func (wm *WatchModel) Update(msg tea.Msg) tea.Cmd {
 				wm.input.Blur()
 				wm.input.SetValue("")
 				return nil
+
 			case "enter":
 				newDir := wm.input.Value()
 				if newDir != "" {
-					// Add directory only if it's not already watched
+
 					for _, d := range wm.dirs {
 						if d == newDir {
 							wm.adding = false
@@ -55,21 +50,25 @@ func (wm *WatchModel) Update(msg tea.Msg) tea.Cmd {
 						}
 					}
 					wm.dirs = append(wm.dirs, newDir)
-					saveWatchedDirs(wm.dirs)
+					watch.SaveDirs(wm.dirs)
 				}
 				wm.adding = false
 				wm.input.SetValue("")
 				return nil
 			}
+
+			var cmd tea.Cmd
+			wm.input, cmd = wm.input.Update(msg)
+			return cmd
+
 		default:
+
 			var cmd tea.Cmd
 			wm.input, cmd = wm.input.Update(msg)
 			return cmd
 		}
-		return nil
 	}
 
-	// Normal watch list mode
 	key, ok := msg.(tea.KeyPressMsg)
 	if !ok {
 		return nil
@@ -93,7 +92,7 @@ func (wm *WatchModel) Update(msg tea.Msg) tea.Cmd {
 			if wm.cursor >= len(wm.dirs) && len(wm.dirs) > 0 {
 				wm.cursor = len(wm.dirs) - 1
 			}
-			saveWatchedDirs(wm.dirs)
+			watch.SaveDirs(wm.dirs)
 		}
 	}
 	return nil
@@ -119,27 +118,4 @@ func (wm WatchModel) View() string {
 	}
 	s += "\n(a)dd  (d)elete  Esc · Back"
 	return s
-}
-
-// ---- Persistence helpers (inline for simplicity) ----
-func watchConfigPath() string {
-	home, _ := os.UserHomeDir()
-	return filepath.Join(home, ".config", "doppio", "watch.json")
-}
-
-func loadWatchedDirs() ([]string, error) {
-	data, err := os.ReadFile(watchConfigPath())
-	if err != nil {
-		return []string{}, nil
-	}
-	var dirs []string
-	json.Unmarshal(data, &dirs)
-	return dirs, nil
-}
-
-func saveWatchedDirs(dirs []string) error {
-	path := watchConfigPath()
-	os.MkdirAll(filepath.Dir(path), 0o755)
-	data, _ := json.MarshalIndent(dirs, "", "  ")
-	return os.WriteFile(path, data, 0o644)
 }
